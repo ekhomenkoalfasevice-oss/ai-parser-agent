@@ -1,0 +1,1 @@
+"""AstroForecast bot package."""

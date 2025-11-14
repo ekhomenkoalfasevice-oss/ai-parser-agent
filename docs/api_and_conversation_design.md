@@ -9,7 +9,7 @@
 | `POST /forecasts/short` | Сгенерировать короткий прогноз (с кешем по дате). | `{user_id}` | `{forecast_id, text, generated_at}` |
 | `POST /forecasts/full` | Полный расклад, требует подписку. | `{user_id}` | `{forecast_id, sections: {finance, love, health, advice}}` |
 | `GET /forecasts?user_id=&type=&date=` | Выдача из архива. | query | список |
-| `POST /subscriptions/checkout` | Создание платежа (Stars/Stripe). | `{user_id, plan}` | платежный токен/инвойс |
+| `POST /subscriptions/checkout` | Создание платежа (150 ₽/мес через Stars/Stripe). | `{user_id, plan}` | платежный токен/инвойс |
 | `POST /payments/webhook` | Колбек провайдера → обновление статуса. | провайдер | `200` |
 | `POST /emergency` | Экстренный вопрос. | `{user_id, question}` | `{answer, available_at_next}` |
 | `POST /notifications/schedule` | Создать напоминания (не открыл прогноз, продление). | payload | расписание |
