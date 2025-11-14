@@ -15,7 +15,10 @@ import redis.asyncio as redis
 
 from astro_bot.bot import create_bot, create_dispatcher
 from astro_bot.config import settings
+from app.api.routes import api_router
 from app.core.redis import create_redis_client
+from app.core.database import engine
+from app.db import Base
 
 logger = logging.getLogger("astro_bot.api")
 
@@ -31,6 +34,10 @@ async def lifespan(app: FastAPI):
 
     logging.config.dictConfig(settings.logging_config)
     logger.info("Starting AstroForecast API (log level: %s)", settings.log_level)
+
+    # Ensure tables exist (simple bootstrap until Alembic is configured)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
     redis_client = create_redis_client()
     storage = RedisStorage(redis=redis_client)
@@ -73,6 +80,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(api_router)
 
 @app.get("/health")
 async def healthcheck() -> dict[str, str]:

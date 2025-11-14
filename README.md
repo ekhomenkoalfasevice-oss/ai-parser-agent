@@ -15,7 +15,12 @@
    DATABASE_URL=postgresql+asyncpg://astro:astro@localhost:5432/astro_bot
    REDIS_DSN=redis://localhost:6379/0
    ```
-3. Запустите API + вебхук:
+3. Поднимите Postgres и Redis (например, через Docker):
+   ```bash
+   docker run -d --name astro-postgres -e POSTGRES_DB=astro_bot -e POSTGRES_USER=astro -e POSTGRES_PASSWORD=astro -p 5432:5432 postgres:16
+   docker run -d --name astro-redis -p 6379:6379 redis:7
+   ```
+4. Запустите API + вебхук:
    ```bash
    uvicorn app.main:app --reload
    ```
@@ -24,8 +29,9 @@
 > Для локальной отладки без вебхука оставлен скрипт `python -m astro_bot.bot`, который запускает aiogram в режиме polling.
 
 ## Статус функционала
-- `/start`, `/help` и заглушки команд `/forecast`, `/full`, `/archive`, `/sos`.
-- FastAPI и aiogram работают в одном процессе, хранение состояний и кешей планируется в Redis (подключение уже настроено).
-- База данных и сервисы генерации прогнозов будут добавлены на следующих шагах (см. `docs/`).
+- `/start` запускает онбординг: бот спрашивает дату, время и город рождения, сохраняет профиль в Postgres и сразу выдаёт короткий прогноз (простой генератор на основе знака).
+- `/forecast` повторно отдаёт короткий прогноз за текущий день (кэш в БД).
+- `/full`, `/archive`, `/sos` пока заглушены — появятся после реализации детальных раскладов и архива.
+- FastAPI и aiogram работают в одном процессе, Telegram обновления принимаются через вебхук, а состояния FSM и кеши подключены к Redis.
 
 Архитектурное описание, промпты и план внедрения лежат в `docs/astro_bot_detailed_spec.md` и `docs/astro_bot_implementation_plan.md`.

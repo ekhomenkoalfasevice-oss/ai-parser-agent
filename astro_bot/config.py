@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     )
     database_echo: bool = Field(default=False, alias="DATABASE_ECHO")
     redis_dsn: str = Field(default="redis://localhost:6379/0", alias="REDIS_DSN")
+    default_timezone: str = Field(
+        default="Europe/Moscow", alias="DEFAULT_TIMEZONE"
+    )
 
     # Observability
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
