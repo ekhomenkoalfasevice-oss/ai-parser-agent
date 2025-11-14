@@ -13,7 +13,10 @@ load_dotenv(_ENV_PATH)
 
 
 class Settings(BaseSettings):
-    telegram_bot_token: str = Field(..., alias="TELEGRAM_BOT_TOKEN")
+    telegram_bot_token: str = Field(
+        default="7681104693:AAEE5nvqdTZGS3a3KjDT7Dh6mJUacbPICgE",
+        alias="TELEGRAM_BOT_TOKEN",
+    )
     payment_provider_token: str | None = Field(
         default=None, alias="PAYMENT_PROVIDER_TOKEN"
     )
