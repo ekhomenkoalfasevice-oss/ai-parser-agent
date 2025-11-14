@@ -1,0 +1,1 @@
+"""AstroForecast FastAPI application package."""

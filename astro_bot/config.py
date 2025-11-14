@@ -1,11 +1,11 @@
-"""Configuration helpers for AstroForecast bot."""
+"""Configuration helpers for AstroForecast bot & API."""
 
 from functools import cached_property
 from pathlib import Path
-from typing import Literal
+from typing import Any
 
 from dotenv import load_dotenv
-from pydantic import BaseSettings, Field, PositiveInt
+from pydantic import AnyHttpUrl, BaseSettings, Field
 
 
 _ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
@@ -13,26 +13,32 @@ load_dotenv(_ENV_PATH)
 
 
 class Settings(BaseSettings):
-    telegram_bot_token: str = Field(
-        default="7681104693:AAEE5nvqdTZGS3a3KjDT7Dh6mJUacbPICgE",
-        alias="TELEGRAM_BOT_TOKEN",
+    # Telegram / bot
+    telegram_bot_token: str = Field(alias="TELEGRAM_BOT_TOKEN")
+    webhook_base_url: AnyHttpUrl | None = Field(
+        default=None,
+        alias="WEBHOOK_BASE_URL",
+        description="External https URL where Telegram will post updates",
     )
-    payment_provider_token: str | None = Field(
-        default=None, alias="PAYMENT_PROVIDER_TOKEN"
+    webhook_path: str = Field(
+        default="/telegram/webhook",
+        alias="WEBHOOK_PATH",
     )
-    subscription_price_rub: PositiveInt = Field(
-        default=150, alias="SUBSCRIPTION_PRICE_RUB"
+    webhook_secret_token: str = Field(
+        default="local-secret-token",
+        alias="WEBHOOK_SECRET_TOKEN",
     )
-    subscription_currency: Literal["RUB"] = Field(default="RUB")
-    subscription_title: str = Field(
-        default="Подписка «АстроПрогноз на Сегодня»"
+
+    # Infrastructure
+    database_url: str = Field(
+        default="postgresql+asyncpg://astro:astro@localhost:5432/astro_bot",
+        alias="DATABASE_URL",
     )
-    subscription_description: str = Field(
-        default=(
-            "Детальные прогнозы на финансы, любовь и здоровье, архив и функция "
-            "«Экстренный вопрос» на 30 дней."
-        )
-    )
+    database_echo: bool = Field(default=False, alias="DATABASE_ECHO")
+    redis_dsn: str = Field(default="redis://localhost:6379/0", alias="REDIS_DSN")
+
+    # Observability
+    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
     model_config = {
         "env_file": ".env",
@@ -41,8 +47,42 @@ class Settings(BaseSettings):
     }
 
     @cached_property
-    def subscription_price_kopeks(self) -> int:
-        return self.subscription_price_rub * 100
+    def normalised_webhook_path(self) -> str:
+        """Ensure webhook path starts with a slash."""
+        path = self.webhook_path or "/telegram/webhook"
+        if not path.startswith("/"):
+            path = f"/{path}"
+        return path.rstrip("/") or "/telegram/webhook"
+
+    @cached_property
+    def webhook_full_url(self) -> str | None:
+        """Full https URL for Telegram webhook, if base URL provided."""
+        if not self.webhook_base_url:
+            return None
+        base = str(self.webhook_base_url).rstrip("/")
+        return f"{base}{self.normalised_webhook_path}"
+
+    @cached_property
+    def logging_config(self) -> dict[str, Any]:
+        return {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "default": {
+                    "format": "%(levelname)s | %(name)s | %(message)s",
+                }
+            },
+            "handlers": {
+                "console": {
+                    "class": "logging.StreamHandler",
+                    "formatter": "default",
+                }
+            },
+            "root": {
+                "level": self.log_level.upper(),
+                "handlers": ["console"],
+            },
+        }
 
 
 settings = Settings()  # type: ignore[arg-type]
